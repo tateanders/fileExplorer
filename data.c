@@ -62,6 +62,7 @@ DIR* openMusicDir(char* music){
         perror("no \"music\" directory found on desktop\n");
         exit(1);
     }
+    chdir(music);
     //printf("Now inside ../music directory!\n");
     return musicDir; 
 }
@@ -123,8 +124,10 @@ struct directory* fillDirectory(DIR* dir, char* dirName){
                 }
                 //create and insert a new directory
                 DIR* newDirectory = opendir(entry->d_name);
+                chdir(entry->d_name);
                 struct directory* newDir = fillDirectory(newDirectory, (char*)entry->d_name);
                 list_insert(directory->directories, newDir);
+                chdir("..");
                 closedir(newDirectory);
 
             } else if (isDirectory(entry) == 0){ //if this entry is a song
