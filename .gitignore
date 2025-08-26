@@ -55,5 +55,5 @@ dkms.conf
 *.dwo
 
 # other
-*.vscode
-*.DS_Store
+.vscode
+.DS_Store
