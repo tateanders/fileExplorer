@@ -30,6 +30,8 @@ void freeSongs(struct dynarray* songs){
     int i;
     for (i = 0; i < dynarray_size(songs); i++){
         song = (struct song*)dynarray_get(songs, i);
+        free(song->fileName);
+        free(song->songName);
         free(song);
     }
     dynarray_free(songs);
@@ -48,6 +50,7 @@ void freeDirectory(struct directory* directory){
         }
         list_free(directory->directories);
     }
+    free(directory->dirName);
     free(directory);
     return;
 }
@@ -63,7 +66,6 @@ DIR* openMusicDir(char* music){
         exit(1);
     }
     chdir(music);
-    //printf("Now inside ../music directory!\n");
     return musicDir; 
 }
 

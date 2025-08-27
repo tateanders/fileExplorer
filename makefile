@@ -1,4 +1,4 @@
-CC=gcc --std=c99 #-g
+CC=gcc --std=c99 -g
 
 all: data
 
@@ -13,3 +13,4 @@ dynarray.o: dynarray.c dynarray.h
 
 clean:
 	rm -f *.o data list dynarray
+	rm -rf *.dSYM
