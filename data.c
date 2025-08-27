@@ -159,6 +159,7 @@ void printSpaces(int numSpaces){
 }
 
 void printSongs(struct dynarray* songs, int numSpaces){
+    printSpaces(numSpaces);
     printf("SONGS:\n");
     struct song* song;
     int i;
