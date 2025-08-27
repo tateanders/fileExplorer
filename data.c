@@ -115,12 +115,10 @@ void addPath(char* dirName, char** dirPath){
         strcpy(newPath, *dirPath);
         strcat(newPath, dirName);
         strcat(newPath, "/");
+        free(*dirPath);
     } else {
         strcpy(newPath, dirName);
         strcat(newPath, "/");
-    }
-    if (*dirPath){
-        free(*dirPath);
     }
     *dirPath = newPath;
 }
@@ -132,10 +130,13 @@ struct directory* createDirectory(char* dirName, char* dirPath){
     directory->dirName = (char*) calloc(strlen(dirName) + 1, sizeof(char));
     strcpy(directory->dirName, dirName);
     //add the path to the directory
-    directory->dirPath = (char*) calloc(strlen(dirPath) + 1, sizeof(char));
-    strcpy(directory->dirPath, dirPath);
+    if (dirPath) {
+        directory->dirPath = (char*) calloc(strlen(dirPath) + 1, sizeof(char));
+        strcpy(directory->dirPath, dirPath);
+    } else {
+        directory->dirPath = NULL;
+    }
     addPath(dirName, &directory->dirPath);
-    //populate the user
     directory->directories = NULL;
     directory->songs = NULL;
     return directory;
@@ -210,7 +211,7 @@ void printDirectory(struct directory* directory, int numSpaces){
             printDirectory(dir2, numSpaces);
         }
     } else if (directory->songs) {
-        //printSongs(directory->songs, numSpaces);
+        printSongs(directory->songs, numSpaces);
     }
     numSpaces--;
 }
@@ -226,9 +227,7 @@ int main(int argc, char* args[]) {
     DIR* musicDir = openMusicDir(musicDirName); 
 
     //get contents of music directory
-    char* musicDirPath = NULL;
-    addPath(musicDirName, &musicDirPath);
-    struct directory* music = fillDirectory(musicDir, musicDirName, musicDirPath);
+    struct directory* music = fillDirectory(musicDir, musicDirName, NULL);
     closedir(musicDir);
 
     //print the contents
