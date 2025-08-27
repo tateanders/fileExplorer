@@ -13,6 +13,7 @@
 
 struct directory {
     char* dirName;
+    char* dirPath;
     struct list* directories;
     struct dynarray* songs;
 };
@@ -52,6 +53,7 @@ void freeDirectory(struct directory* directory){
         list_free(directory->directories);
     }
     free(directory->dirName);
+    free(directory->dirPath);
     free(directory);
     return;
 }
@@ -101,19 +103,46 @@ struct song* createSong(struct dirent* entry){
     Directory functions
 -------------------------------------------------------------------------------------------------*/
 
-struct directory* createDirectory(char* dirName){
+void addPath(char* dirName, char** dirPath){
+    size_t newLen;
+    if (*dirPath){
+        newLen = strlen(*dirPath) + strlen(dirName) + 2;
+    } else {
+        newLen = strlen(dirName) + 2;
+    }
+    char* newPath = (char*)calloc(newLen, sizeof(char));
+    if (*dirPath){
+        strcpy(newPath, *dirPath);
+        strcat(newPath, dirName);
+        strcat(newPath, "/");
+    } else {
+        strcpy(newPath, dirName);
+        strcat(newPath, "/");
+    }
+    if (*dirPath){
+        free(*dirPath);
+    }
+    *dirPath = newPath;
+}
+
+struct directory* createDirectory(char* dirName, char* dirPath){
     //create the directory
     struct directory* directory = (struct directory*) calloc(1, sizeof(struct directory));
+    //add the name to the directory
     directory->dirName = (char*) calloc(strlen(dirName) + 1, sizeof(char));
     strcpy(directory->dirName, dirName);
+    //add the path to the directory
+    directory->dirPath = (char*) calloc(strlen(dirPath) + 1, sizeof(char));
+    strcpy(directory->dirPath, dirPath);
+    addPath(dirName, &directory->dirPath);
     //populate the user
     directory->directories = NULL;
     directory->songs = NULL;
     return directory;
 }
 
-struct directory* fillDirectory(DIR* dir, char* dirName){
-    struct directory* directory = createDirectory(dirName);
+struct directory* fillDirectory(DIR* dir, char* dirName, char* dirPath){
+    struct directory* directory = createDirectory(dirName, dirPath);
     struct dirent* entry;
     do {
         //read the entry
@@ -128,7 +157,7 @@ struct directory* fillDirectory(DIR* dir, char* dirName){
                 //create and insert a new directory
                 DIR* newDirectory = opendir(entry->d_name);
                 chdir(entry->d_name);
-                struct directory* newDir = fillDirectory(newDirectory, (char*)entry->d_name);
+                struct directory* newDir = fillDirectory(newDirectory, (char*)entry->d_name, directory->dirPath);
                 list_insert(directory->directories, newDir);
                 chdir("..");
                 closedir(newDirectory);
@@ -172,7 +201,7 @@ void printSongs(struct dynarray* songs, int numSpaces){
 
 void printDirectory(struct directory* directory, int numSpaces){
     printSpaces(numSpaces);
-    printf("DIRECTORY: %s\n", directory->dirName);
+    printf("DIRECTORY: %s, PATH: %s\n", directory->dirName, directory->dirPath);
     numSpaces++;
     if(directory->directories) {
         int i;
@@ -181,7 +210,7 @@ void printDirectory(struct directory* directory, int numSpaces){
             printDirectory(dir2, numSpaces);
         }
     } else if (directory->songs) {
-        printSongs(directory->songs, numSpaces);
+        //printSongs(directory->songs, numSpaces);
     }
     numSpaces--;
 }
@@ -197,7 +226,9 @@ int main(int argc, char* args[]) {
     DIR* musicDir = openMusicDir(musicDirName); 
 
     //get contents of music directory
-    struct directory* music = fillDirectory(musicDir, musicDirName);
+    char* musicDirPath = NULL;
+    addPath(musicDirName, &musicDirPath);
+    struct directory* music = fillDirectory(musicDir, musicDirName, musicDirPath);
     closedir(musicDir);
 
     //print the contents
