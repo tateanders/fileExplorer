@@ -25,6 +25,7 @@ struct song {
 /*-------------------------------------------------------------------------------------------------
     Free functions
 -------------------------------------------------------------------------------------------------*/
+
 void freeSongs(struct dynarray* songs){
     struct song* song;
     int i;
@@ -147,6 +148,44 @@ struct directory* fillDirectory(DIR* dir, char* dirName){
 }
 
 /*-------------------------------------------------------------------------------------------------
+    Print functions
+-------------------------------------------------------------------------------------------------*/
+
+void printSpaces(int numSpaces){
+    int i;
+    for (i = 0; i < numSpaces; i++){
+        printf(" ");
+    }
+}
+
+void printSongs(struct dynarray* songs, int numSpaces){
+    printf("SONGS:\n");
+    struct song* song;
+    int i;
+    for (i = 0; i < dynarray_size(songs); i++){
+        printSpaces(numSpaces);
+        song = (struct song*) dynarray_get(songs, i);
+        printf("TITLE: %s\n", song->songName);
+    }
+}
+
+void printDirectory(struct directory* directory, int numSpaces){
+    printSpaces(numSpaces);
+    printf("DIRECTORY: %s\n", directory->dirName);
+    numSpaces++;
+    if(directory->directories) {
+        int i;
+        for (i = 0; i < getNumElements(directory->directories); i++){
+            struct directory* dir2 = (struct directory*) list_element(directory->directories, i);
+            printDirectory(dir2, numSpaces);
+        }
+    } else if (directory->songs) {
+        printSongs(directory->songs, numSpaces);
+    }
+    numSpaces--;
+}
+
+/*-------------------------------------------------------------------------------------------------
     Main
 -------------------------------------------------------------------------------------------------*/
 
@@ -159,6 +198,10 @@ int main(int argc, char* args[]) {
     //get contents of music directory
     struct directory* music = fillDirectory(musicDir, musicDirName);
     closedir(musicDir);
+
+    //print the contents
+    int numSpaces = 0;
+    printDirectory(music, numSpaces);
     
     //exit the program
     freeDirectory(music);
