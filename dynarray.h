@@ -1,3 +1,6 @@
+/*-------------------------------------------------------------------------------------------------
+    This file is largely based off of projects from my data structures class
+-------------------------------------------------------------------------------------------------*/
 #ifndef __DYNARRAY_H
 #define __DYNARRAY_H
 
@@ -12,12 +15,12 @@ struct dynarray;
 -------------------------------------------------------------------------------------------------*/
 
 struct dynarray* dynarray_create();
-void dynarray_free(struct dynarray* arr);
-int dynarray_size(struct dynarray* arr);
-int dynarray_capacity(struct dynarray* arr);
-void dynarray_insert(struct dynarray* arr, void* val);
-void dynarray_remove(struct dynarray* arr, int idx);
-void* dynarray_get(struct dynarray* arr, int idx);
-void dynarray_set(struct dynarray* arr, int idx, void* val);
+void dynarray_free(struct dynarray*);
+int dynarray_size(struct dynarray*);
+int dynarray_capacity(struct dynarray*);
+void dynarray_insert(struct dynarray*, void*);
+void dynarray_remove(struct dynarray*, int);
+void* dynarray_get(struct dynarray*, int);
+void dynarray_set(struct dynarray*, int, void*);
 
 #endif

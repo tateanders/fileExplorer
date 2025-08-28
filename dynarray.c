@@ -1,3 +1,6 @@
+/*-------------------------------------------------------------------------------------------------
+    This file is largely based off of projects from my data structures class
+-------------------------------------------------------------------------------------------------*/
 #include <stdlib.h>
 #include <assert.h>
 #include "dynarray.h"
@@ -10,15 +13,17 @@ struct dynarray {
 	void** data;
 	int size;
 	int capacity;
-	//int start;
 };
 
 /*-------------------------------------------------------------------------------------------------
     Create/Free
 -------------------------------------------------------------------------------------------------*/
+
 struct dynarray* dynarray_create() {
 	struct dynarray* arr = calloc(1, sizeof(struct dynarray));
+	assert(arr);
 	arr->data = calloc(2, sizeof(void*));
+	assert(arr->data);
 	arr->capacity = 2;
 	arr->size = 0;
 	return arr;
@@ -34,25 +39,27 @@ void dynarray_free(struct dynarray* arr) {
     Setters
 -------------------------------------------------------------------------------------------------*/
 
-void dynarray_insert(struct dynarray* da, void* val) {
-	if(da->size == da->capacity){
-		da->capacity *= 2;
-		da->data = realloc(da->data, da->capacity * sizeof(void*));
+void dynarray_insert(struct dynarray* arr, void* val) {
+	assert(arr);
+	if(arr->size == arr->capacity){
+		arr->capacity *= 2;
+		arr->data = realloc(arr->data, arr->capacity * sizeof(void*));
 	}
-	da->data[da->size] = val;
-	da->size += 1;
+	arr->data[arr->size] = val;
+	arr->size += 1;
 }
 
-void dynarray_remove(struct dynarray* da, int idx) {
-	if(da->data[idx] != NULL){
-		da->data[idx] = NULL;
-		for (int i = idx; i < da->size; i++){
-			da->data[i] = da->data[i + 1];
+void dynarray_remove(struct dynarray* arr, int idx) {
+	assert(arr);
+	if(arr->data[idx] != NULL){
+		arr->data[idx] = NULL;
+		for (int i = idx; i < arr->size; i++){
+			arr->data[i] = arr->data[i + 1];
 		}
-		if(da->data[da->size] != NULL){
-			da->data[da->size] = NULL;
+		if(arr->data[arr->size] != NULL){
+			arr->data[arr->size] = NULL;
 		}
-		da->size -= 1;
+		arr->size -= 1;
 		return;
 	}
 	return;

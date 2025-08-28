@@ -21,6 +21,7 @@ struct directory {
 struct song {
     char* songName;
     char* fileName;
+    char* fileType;
 };
 
 /*-------------------------------------------------------------------------------------------------
@@ -34,6 +35,7 @@ void freeSongs(struct dynarray* songs){
         song = (struct song*)dynarray_get(songs, i);
         free(song->fileName);
         free(song->songName);
+        free(song->fileType);
         free(song);
     }
     dynarray_free(songs);
@@ -88,6 +90,7 @@ int isDirectory(struct dirent* entry){
 
 struct song* createSong(struct dirent* entry){
     struct song* song = (struct song*) calloc(1, sizeof(struct song));
+    //set the file name
     song->fileName = (char*) calloc(strlen(entry->d_name) + 1, sizeof(char));
     strcpy(song->fileName, entry->d_name);
     //get the songs name and null terminate it
@@ -96,6 +99,11 @@ struct song* createSong(struct dirent* entry){
     song->songName = (char*) calloc(len + 1, sizeof(char));
     strncpy(song->songName, song->fileName, len);
     song->songName[len] = '\0';
+    //get the songs file extension
+    len = (strlen(song->fileName) - strlen(song->songName));
+    song->fileType = (char*) calloc(len, sizeof(char));
+    strcpy(song->fileType, dot + 1);
+    //return
     return song;
 }
 
@@ -196,7 +204,7 @@ void printSongs(struct dynarray* songs, int numSpaces){
     for (i = 0; i < dynarray_size(songs); i++){
         printSpaces(numSpaces);
         song = (struct song*) dynarray_get(songs, i);
-        printf("TITLE: %s\n", song->songName);
+        printf("TITLE: %s TYPE: %s\n", song->songName, song->fileType);
     }
 }
 
@@ -223,7 +231,7 @@ void printDirectory(struct directory* directory, int numSpaces){
 int main(int argc, char* args[]) {
     //enter music directory
     chdir("..");
-    char* musicDirName = "music";
+    char* musicDirName = "Music";
     DIR* musicDir = openMusicDir(musicDirName); 
 
     //get contents of music directory

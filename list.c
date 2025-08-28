@@ -1,3 +1,6 @@
+/*-------------------------------------------------------------------------------------------------
+    This file is largely based off of projects from my data structures class
+-------------------------------------------------------------------------------------------------*/
 #include <stdlib.h>
 #include <assert.h>
 #include "list.h"
