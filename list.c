@@ -76,6 +76,7 @@ void* list_getElement(struct list* list, int position){
 }
 
 int list_getNumElements(struct list* list){
+	assert(list);
 	return list->numElements;
 }
 
