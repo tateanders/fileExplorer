@@ -45,10 +45,10 @@ void freeDirectory(struct directory* directory){
         freeSongs(directory->songs);
     }
     if(directory->directories){
-        struct directory* dir2 = (struct directory*)list_remove_head(directory->directories);
+        struct directory* dir2 = (struct directory*)list_pop(directory->directories);
         while(dir2){
             freeDirectory(dir2);
-            dir2 = (struct directory*)list_remove_head(directory->directories);
+            dir2 = (struct directory*)list_pop(directory->directories);
         }
         list_free(directory->directories);
     }
@@ -206,8 +206,8 @@ void printDirectory(struct directory* directory, int numSpaces){
     numSpaces++;
     if(directory->directories) {
         int i;
-        for (i = 0; i < getNumElements(directory->directories); i++){
-            struct directory* dir2 = (struct directory*) list_element(directory->directories, i);
+        for (i = 0; i < list_getNumElements(directory->directories); i++){
+            struct directory* dir2 = (struct directory*) list_getElement(directory->directories, i);
             printDirectory(dir2, numSpaces);
         }
     } else if (directory->songs) {
