@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include "list.h"
 #include "dynarray.h"
+#include "editMetadata.h"
 
 /*-------------------------------------------------------------------------------------------------
     Structs
@@ -231,7 +232,7 @@ void printDirectory(struct directory* directory, int numSpaces){
 int main(int argc, char* args[]) {
     //enter music directory
     chdir("..");
-    char* musicDirName = "Music";
+    char* musicDirName = "MusicSafe";
     DIR* musicDir = openMusicDir(musicDirName); 
 
     //get contents of music directory
