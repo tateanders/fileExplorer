@@ -105,6 +105,7 @@ struct song* createSong(struct dirent* entry){
     song->fileType = (char*) calloc(len, sizeof(char));
     strcpy(song->fileType, dot + 1);
     //return
+    addComment(entry, "");
     return song;
 }
 
@@ -205,7 +206,7 @@ void printSongs(struct dynarray* songs, int numSpaces){
     for (i = 0; i < dynarray_size(songs); i++){
         printSpaces(numSpaces);
         song = (struct song*) dynarray_get(songs, i);
-        printf("TITLE: %s TYPE: %s\n", song->songName, song->fileType);
+        printf("TITLE: %s | TYPE: %s\n", song->songName, song->fileType);
     }
 }
 
