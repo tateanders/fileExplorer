@@ -1,3 +1,16 @@
+#include <stdlib.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include "editID3v1.h"
+
+void readV1Tags(FILE* file, struct mp3Tags** tags){
+    
+}
+
 /*-------------------------------------------------------------------------------------------------
     Add comment functions for ID3v1
 -------------------------------------------------------------------------------------------------*/
