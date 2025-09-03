@@ -5,7 +5,16 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include "editMetadata.h"
+
+/*-------------------------------------------------------------------------------------------------
+    Structs
+-------------------------------------------------------------------------------------------------*/
+
+/*-------------------------------------------------------------------------------------------------
+    Check format functions
+-------------------------------------------------------------------------------------------------*/
 
 int checkID3v2(FILE* file){
     char id3v2_header[3];
@@ -32,6 +41,10 @@ int checkID3v1(FILE* file){
     return 0;
 }
 
+/*-------------------------------------------------------------------------------------------------
+    Main Function
+-------------------------------------------------------------------------------------------------*/
+
 int addComment(struct dirent* entry, char* comment){
     //open the file with read and binary permissions
     FILE* file = fopen(entry->d_name, "r+b");
@@ -52,11 +65,6 @@ int addComment(struct dirent* entry, char* comment){
         fclose(file);
         return 0;
     }
-
-
-
-
-
 
     fclose(file);
     return 1;

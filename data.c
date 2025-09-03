@@ -4,8 +4,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/stat.h>
-#include "list.h"
-#include "dynarray.h"
+#include "structures/list.h"
+#include "structures/dynarray.h"
 #include "editMetadata.h"
 
 /*-------------------------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ struct song* createSong(struct dirent* entry){
     song->fileType = (char*) calloc(len, sizeof(char));
     strcpy(song->fileType, dot + 1);
     //return
-    addComment(entry, "");
+    //addComment(entry, "");
     return song;
 }
 
