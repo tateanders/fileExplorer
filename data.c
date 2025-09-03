@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 #include "structures/list.h"
 #include "structures/dynarray.h"
-#include "editMetadata.h"
+#include "metadata.h"
 
 /*-------------------------------------------------------------------------------------------------
     Structs
