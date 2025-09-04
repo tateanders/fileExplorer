@@ -89,7 +89,7 @@ int isDirectory(struct dirent* entry){
     Song functions
 -------------------------------------------------------------------------------------------------*/
 
-struct song* createSong(struct dirent* entry){
+struct song* createSong(struct dirent* entry, char* dirPath){
     struct song* song = (struct song*) calloc(1, sizeof(struct song));
     //set the file name
     song->fileName = (char*) calloc(strlen(entry->d_name) + 1, sizeof(char));
@@ -105,7 +105,7 @@ struct song* createSong(struct dirent* entry){
     song->fileType = (char*) calloc(len, sizeof(char));
     strcpy(song->fileType, dot + 1);
     //return
-    //addComment(entry, "");
+    addComment(entry, dirPath);
     return song;
 }
 
@@ -179,7 +179,7 @@ struct directory* fillDirectory(DIR* dir, char* dirName, char* dirPath){
                     directory->songs = (struct dynarray*) dynarray_create();
                 }
                 //create and insert a new song
-                struct song* song = createSong(entry);
+                struct song* song = createSong(entry, dirPath);
                 dynarray_insert(directory->songs, song);
             }
         }
