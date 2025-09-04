@@ -26,6 +26,23 @@ struct ID3v2dot3Header {
     uint8_t xFlag;
 };
 
+struct ID3v2dot3ExtendedHeader {
+    //main data that gets read
+    uint32_t size;
+    uint16_t flags;
+    uint32_t paddingSize;
+    uint32_t crc;
+    //data after interpretation
+    uint8_t crcFlag;
+};
+
+struct ID3v2dot3Frame {
+    char id[5];       // Frame ID (4 chars + null terminator)
+    uint32_t size;    // Frame size in bytes
+    uint16_t flags;   // Frame flags
+    uint8_t* data;    // Frame content (malloc'd)
+};
+
 /*-------------------------------------------------------------------------------------------------
     Helper functions
 -------------------------------------------------------------------------------------------------*/
@@ -77,6 +94,28 @@ void printHeader(struct ID3v2dot3Header* header) {
     printf("Version: %i | Size: %i | uFlag: %i | eFlag: %i | xFlag: %i\n", header->version, header->size, header->uFlag, header->eFlag, header->xFlag);
 }
 
+void readID3v2dot3ExtendedHeader(FILE* file, struct ID3v2dot3ExtendedHeader* exHeader) {
+    // Read 10 bytes first (size + flags + padding size)
+    uint8_t buffer[10];
+
+    exHeader->size = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3];
+    exHeader->flags = (buffer[4] << 8) | buffer[5];
+    exHeader->paddingSize = (buffer[6] << 24) | (buffer[7] << 16) | (buffer[8] << 8) | buffer[9];
+    exHeader->crcFlag = (exHeader->flags & 0x8000) ? 1 : 0;
+
+    // Read optional CRC if present
+    if (exHeader->crcFlag) {
+        uint8_t crcBuf[4];
+        if (fread(crcBuf, 1, 4, file) != 4) {
+            printf("Failed to read CRC from extended header\n");
+            return;
+        }
+        exHeader->crc = (crcBuf[0] << 24) | (crcBuf[1] << 16) | (crcBuf[2] << 8) | crcBuf[3];
+    } else {
+        exHeader->crc = 0; // No CRC present
+    }
+}
+
 /*-------------------------------------------------------------------------------------------------
     Add comment functions for ID3v2.3
 -------------------------------------------------------------------------------------------------*/
@@ -87,6 +126,12 @@ int addCommentV2dot3(FILE* file, char* comment){
         return 0;
     }
     printHeader(header);
+    struct ID3v2dot3ExtendedHeader* exHeader = calloc(1, sizeof(struct ID3v2dot3ExtendedHeader));
+    if (header->eFlag) {
+        readID3v2dot3ExtendedHeader(file, exHeader);
+    }
 
+    free(header);
+    free(exHeader);
     return 1;
 }
