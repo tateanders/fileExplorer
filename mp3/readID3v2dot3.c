@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdint.h>
-#include "editID3v2dot3.h"
+#include "readID3v2dot3.h"
 #include "structures/dynarray.h"
 
 /*-------------------------------------------------------------------------------------------------

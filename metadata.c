@@ -7,7 +7,7 @@
 #include <fcntl.h>
 #include <stdint.h>
 #include "metadata.h"
-#include "mp3/editID3v2dot3.h"
+#include "mp3/readID3v2dot3.h"
 
 /*-------------------------------------------------------------------------------------------------
     Check format functions
