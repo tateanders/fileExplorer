@@ -1,7 +1,8 @@
 #ifndef __EDITMETADATA_H
 #define __EDITMETADATA_H
 
-struct mp3Tags;
+#include "mp3/readID3v2dot3.h"
+#include "mp3/editID3v2dot3.h"
 
 int addComment(struct dirent*, char*);
 

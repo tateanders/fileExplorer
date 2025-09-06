@@ -179,7 +179,7 @@ struct directory* fillDirectory(DIR* dir, char* dirName, char* dirPath){
                     directory->songs = (struct dynarray*) dynarray_create();
                 }
                 //create and insert a new song
-                struct song* song = createSong(entry, dirPath);
+                struct song* song = createSong(entry, directory->dirPath);
                 dynarray_insert(directory->songs, song);
             }
         }

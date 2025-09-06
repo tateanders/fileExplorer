@@ -29,43 +29,44 @@ const char* ID3v2dot3ValidTags[] = {
 
 const size_t ID3v23ValidFramesCount = sizeof(ID3v2dot3ValidTags) / sizeof(ID3v2dot3ValidTags[0]);
 
-struct ID3v2dot3Header {
-    //main data that gets read
-    char id[3];
-    uint8_t version;
-    uint8_t revision;
-    uint8_t flags;
-    uint32_t size;
-    //data after interpretation
-    uint8_t uFlag;
-    uint8_t eFlag;
-    uint8_t xFlag;
-};
+// struct ID3v2dot3Header {
+//     //main data that gets read
+//     char id[3];
+//     uint8_t version;
+//     uint8_t revision;
+//     uint8_t flags;
+//     uint32_t size;
+//     //data after interpretation
+//     uint8_t uFlag;
+//     uint8_t eFlag;
+//     uint8_t xFlag;
+// };
 
-struct ID3v2dot3ExtendedHeader {
-    //main data that gets read
-    uint32_t size;
-    uint16_t flags;
-    uint32_t paddingSize;
-    uint32_t crc;
-    //data after interpretation
-    uint8_t crcFlag;
-};
+// struct ID3v2dot3ExtendedHeader {
+//     //main data that gets read
+//     uint32_t size;
+//     uint16_t flags;
+//     uint32_t paddingSize;
+//     uint32_t crc;
+//     //data after interpretation
+//     uint8_t crcFlag;
+// };
 
-struct ID3v2dot3Frame {
-    char id[4];
-    uint32_t size;
-    uint16_t flags;
-    uint8_t* data;
-    size_t totalSize;
-};
+// struct ID3v2dot3Frame {
+//     char id[4];
+//     uint32_t size;
+//     uint16_t flags;
+//     uint8_t* data;
+//     //size_t totalSize;
+// };
 
-struct ID3v2dot3MetaData {
-    struct ID3v2dot3Header* header;
-    struct ID3v2dot3ExtendedHeader* exHeader;
-    struct dynarray* frames;
-    size_t size;
-};
+// struct ID3v2dot3MetaData {
+//     struct ID3v2dot3Header* header;
+//     struct ID3v2dot3ExtendedHeader* exHeader;
+//     struct dynarray* frames;
+//     // size_t size;
+//     ssize_t whiteSpace;
+// };
 
 /*-------------------------------------------------------------------------------------------------
     Helper functions
@@ -201,7 +202,7 @@ struct ID3v2dot3Frame* readFrame(FILE* file) {
         return NULL;
     }
 
-    frame->totalSize = frame->size + 10;
+    // frame->totalSize = frame->size + 10;
 
     printFrame(frame);
     return frame;
@@ -230,29 +231,32 @@ size_t getWhiteSpace(FILE* file) {
     return count;
 }
 
-size_t getTotalSpace(size_t whiteSpace, struct ID3v2dot3MetaData* data) {
-    //add the header
-    size_t size = 10;
-    //add the extended header
-    if (data->exHeader){
-        size += 10;
-        size += data->exHeader->size;
-    }
-    //add the frame sizes
-    int arrSize = dynarray_size(data->frames);
-    int i;
-    for (i = 0; i < arrSize; i++) {
-        struct ID3v2dot3Frame* frame = (struct ID3v2dot3Frame*)dynarray_get(data->frames, i);
-        size += frame->size;
-    }
-    //add the whitespace
-    size += whiteSpace;
-    return size;
-}
-
 /*-------------------------------------------------------------------------------------------------
     Add comment functions for ID3v2.3
 -------------------------------------------------------------------------------------------------*/
+
+// size_t getTotalSpace(struct ID3v2dot3MetaData* data) {
+//     //add the header
+//     size_t size = 10;
+//     //add the extended header
+//     if (data->exHeader){
+//         size += 10;
+//         if (data->exHeader->crc){
+//             size +=4;
+//         }
+//     }
+//     //add the frame sizes
+//     int arrSize = dynarray_size(data->frames);
+//     int i;
+//     for (i = 0; i < arrSize; i++) {
+//         struct ID3v2dot3Frame* frame = (struct ID3v2dot3Frame*)dynarray_get(data->frames, i);
+//         size += 10;
+//         size += frame->size;
+//     }
+//     //add the whitespace
+//     size += data->whiteSpace;
+//     return size;
+// }
 
 void freeDataV2dot3(struct ID3v2dot3MetaData* data) {
     free(data->header);
@@ -283,28 +287,8 @@ struct ID3v2dot3MetaData* getMetaDataV2dot3(FILE* file) {
         readID3v2dot3ExtendedHeader(file, data->exHeader);
     }
     data->frames = getFrames(file);
-    data->size = getTotalSpace(getWhiteSpace(file), data);
+    data->whiteSpace = getWhiteSpace(file);
+    //data->size = getTotalSpace(data);
 
     return data;
 }
-
-// int addCommentV2dot3(FILE* file, char* comment){
-//     struct ID3v2dot3MetaData* data = (struct ID3v2dot3MetaData*)calloc(1, sizeof(struct ID3v2dot3MetaData));
-//     fseek(file, 0, SEEK_SET);
-//     data->header = readID3v2dot3Header(file);
-//     if (!data->header) {
-//         return 0;
-//     }
-//     printHeader(data->header);
-//     data->exHeader = calloc(1, sizeof(struct ID3v2dot3ExtendedHeader));
-//     if (data->header->eFlag) {
-//         readID3v2dot3ExtendedHeader(file, data->exHeader);
-//     }
-//     data->frames = getFrames(file);
-//     data->size = getTotalSpace(getWhiteSpace(file), data);
-
-
-//     free(data->header);
-//     free(data->exHeader);
-//     return 1;
-// }
