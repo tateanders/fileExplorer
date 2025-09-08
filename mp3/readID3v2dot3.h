@@ -35,6 +35,7 @@ struct ID3v2dot3MetaData {
     struct dynarray* frames;
     // size_t size;
     ssize_t whiteSpace;
+    long endHeader;
 };
 
 size_t getTotalSpace(struct ID3v2dot3MetaData* data);
