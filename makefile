@@ -1,5 +1,5 @@
 CC=gcc --std=c99 -g
-CFLAGS = -I. -IID3v2dot3 -Istructures
+CFLAGS = -I. -IID3v2dot3 -IID3v2dot4 -Istructures
 
 all: data
 
@@ -21,8 +21,14 @@ ID3v2dot3/readID3v2dot3.o: ID3v2dot3/readID3v2dot3.c ID3v2dot3/readID3v2dot3.h
 ID3v2dot3/editID3v2dot3.o: ID3v2dot3/editID3v2dot3.c ID3v2dot3/editID3v2dot3.h
 	$(CC) $(CFLAGS) -c ID3v2dot3/editID3v2dot3.c -o ID3v2dot3/editID3v2dot3.o
 
+ID3v2dot4/readID3v2dot4.o: ID3v2dot4/readID3v2dot4.c ID3v2dot4/readID3v2dot4.h
+	$(CC) $(CFLAGS) -c ID3v2dot4/readID3v2dot4.c -o ID3v2dot4/readID3v2dot4.o
+
+ID3v2dot4/editID3v2dot4.o: ID3v2dot4/editID3v2dot4.c ID3v2dot4/editID3v2dot4.h
+	$(CC) $(CFLAGS) -c ID3v2dot4/editID3v2dot4.c -o ID3v2dot4/editID3v2dot4.o
+
 clean:
-	rm -f *.o data metadata structures/*.o ID3v2dot3/*.o
+	rm -f *.o data metadata structures/*.o ID3v2dot3/*.o ID3v2dot4/*.o
 	rm -rf *.dSYM
 	clear
 	clear
