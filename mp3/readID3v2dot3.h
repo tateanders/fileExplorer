@@ -1,6 +1,8 @@
 #ifndef __READTD3V2DOT3_H
 #define __READTD3V2DOT3_H
 
+#include <stdint.h>
+
 struct ID3v2dot3Header {
     //main data that gets read
     char id[3];
@@ -34,7 +36,7 @@ struct ID3v2dot3MetaData {
     struct ID3v2dot3ExtendedHeader* exHeader;
     struct dynarray* frames;
     // size_t size;
-    ssize_t whiteSpace;
+    ssize_t padding;
     //long endHeader;
 };
 

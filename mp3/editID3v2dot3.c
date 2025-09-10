@@ -1,17 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <dirent.h>
-#include <unistd.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <stdint.h>
 #include <sys/types.h>
+
 #include "editID3v2dot3.h"
 #include "structures/dynarray.h"
 
 /*-------------------------------------------------------------------------------------------------
-    Helper Functions
+    Helper Functions (lowkey used AI)
 -------------------------------------------------------------------------------------------------*/
 
 static inline void write_u32_be(uint8_t* buf, uint32_t value) {
@@ -26,7 +23,6 @@ static inline void write_u16_be(uint8_t* buf, uint16_t value) {
     buf[1] =  value       & 0xFF;
 }
 
-// Function to convert regular integer to synchsafe integer
 void int_to_synchsafe(uint32_t value, uint8_t* bytes) {
     bytes[0] = (value >> 21) & 0x7F;
     bytes[1] = (value >> 14) & 0x7F;
@@ -48,34 +44,34 @@ long addHeader(uint8_t* dataString, struct ID3v2dot3Header* header) {
 }
 
 long addExHeader(uint8_t* dataString, struct ID3v2dot3ExtendedHeader* exHeader) {
-    // Size (4 bytes)
+    //add the ex header size
     write_u32_be(dataString, exHeader->size);
-    // Flags (2 bytes)
+    //add the flags
     write_u16_be(dataString + 4, exHeader->flags);
-    // Padding size (4 bytes)
+    //add the padding size
     write_u32_be(dataString + 6, exHeader->paddingSize);
 
-    long written = 10;
-    // Optional CRC
+    long bytesWritten = 10;
+    //if the crc exists
     if (exHeader->crcFlag) {
         write_u32_be(dataString + 10, exHeader->crc);
-        written += 4;
+        bytesWritten += 4;
     }
 
-    return written;
+    return bytesWritten;
 }
 
 long addFrame(uint8_t* dataString, struct ID3v2dot3Frame* frame) {
-    // Frame ID: exactly 4 bytes (your struct stores 4 chars, not null-terminated)
+    //tag
     memcpy(dataString, frame->id, 4);
 
-    // Size: 4 bytes big-endian (ID3v2.3 uses non-synchsafe 32-bit BE here)
+    //size
     write_u32_be(dataString + 4, frame->size);
 
-    // Flags: 2 bytes big-endian
+    //flags
     write_u16_be(dataString + 8, frame->flags);
 
-    // Payload: copy frame->size bytes (if any)
+    //actual data
     if ((frame->size > 0) && frame->data) {
         memcpy(dataString + 10, frame->data, (size_t)frame->size);
     }
@@ -84,19 +80,45 @@ long addFrame(uint8_t* dataString, struct ID3v2dot3Frame* frame) {
 }
 
 /*-------------------------------------------------------------------------------------------------
+    Calculate the size and add it to the header
+-------------------------------------------------------------------------------------------------*/
+
+void updateSize(struct ID3v2dot3MetaData* data) {
+    uint32_t size = 0;
+    if (data->exHeader) {
+        size += data->exHeader->size;
+    }
+    int i;
+    int numFrames = dynarray_size(data->frames);
+    for (i = 0; i < numFrames; i++) {
+        struct ID3v2dot3Frame* frame = dynarray_get(data->frames, i);
+        size += frame->size + 10;
+    }
+    size += (uint32_t)data->padding;
+    data->header->size = size;
+    data->exHeader->paddingSize = (uint32_t)data->padding;
+}
+
+/*-------------------------------------------------------------------------------------------------
     write to file functions
 -------------------------------------------------------------------------------------------------*/
 
 void updateFile(FILE* file, struct ID3v2dot3MetaData* data) {
+    //recalculate the size for the header
+    updateSize(data);
+    //get the total size and the string we will print
     uint32_t totalSize = data->header->size + 10;
     uint8_t* dataString = calloc(totalSize, sizeof(uint8_t));
 
+    //get the current position and add header
     long currPos = addHeader(dataString, data->header);
 
+    //add ex header
     if (data->header->eFlag == 1) {
         currPos += addExHeader(dataString + currPos, data->exHeader);
     }
     
+    //add frames
     struct dynarray* frames = data->frames;
     int numFrames = dynarray_size(frames);
     int i;
@@ -105,29 +127,27 @@ void updateFile(FILE* file, struct ID3v2dot3MetaData* data) {
         currPos += addFrame(dataString + currPos, frame);
     }
 
-    // printf("CurrPos: %li, TotalSize: %i\n", currPos, totalSize);
-
+    //write the data
     fseek(file, 0, SEEK_SET);
     fwrite(dataString, 1, (size_t)totalSize, file);
     fflush(file);
-
-    //printf("updated file\n");
 
     free(dataString);
 }
 
 //-------------------------------------------------------------------------------------------------
 
-void addWhiteSpace(FILE* file, struct ID3v2dot3MetaData* data){
+void addpadding(FILE* file, struct ID3v2dot3MetaData* data){
     long totalSize = (long)data->header->size + 10;
+
     //compute the remaining size
     fseek(file, 0, SEEK_END);
     long fileEnd = ftell(file);
     long remainingSize = fileEnd - totalSize;
     if (remainingSize <= 0){
-        printf("error allocating whitespace\n");
+        printf("error allocating padding\n");
         return;
-    };
+    }
 
     //allocate the buffer
     uint8_t *musicDat = NULL;
@@ -139,17 +159,17 @@ void addWhiteSpace(FILE* file, struct ID3v2dot3MetaData* data){
     fseek(file, totalSize, SEEK_SET);
 
     //insert the zeros
-    ssize_t WSSize = 512;
-    uint8_t *WS = calloc((size_t)WSSize, 1);
-    fwrite(WS, 1, (size_t)WSSize, file);
-    free(WS);
+    ssize_t padSize = 512;
+    uint8_t *pad = calloc((size_t)padSize, 1);
+    fwrite(pad, 1, (size_t)padSize, file);
+    free(pad);
 
     //write the remaining data
     fwrite(musicDat, 1, (size_t)remainingSize, file);
     fflush(file);
 
     //update the structs
-    data->whiteSpace += WSSize;
+    data->padding += padSize;
 
     //free the buffer
     free(musicDat);
@@ -172,6 +192,7 @@ struct ID3v2dot3Frame* popCommentFrame(struct dynarray* arr) {
     return NULL;
 }
 
+//remove comment frame and return how many bytes were removed
 int removeCommentIfExists(struct dynarray* arr) {
     struct ID3v2dot3Frame* comment = popCommentFrame(arr);
     int frameSize = 0;
@@ -204,6 +225,7 @@ struct ID3v2dot3Frame* createCommentFrame(char* comment) {
     return frame;
 }
 
+//add comment frame and return how many bytes were added
 int insertCommentFrame(char* comment, struct dynarray* arr) {
     struct ID3v2dot3Frame* commentFrame = createCommentFrame(comment);
     int frameSize = 10 + commentFrame->size;
@@ -212,44 +234,18 @@ int insertCommentFrame(char* comment, struct dynarray* arr) {
 }
 
 /*-------------------------------------------------------------------------------------------------
-    Calculate the size and add it to the header
--------------------------------------------------------------------------------------------------*/
-
-void updateSize(struct ID3v2dot3MetaData* data) {
-    uint32_t size = 0;
-    if (data->exHeader) {
-        size += data->exHeader->size;
-    }
-    int i;
-    int numFrames = dynarray_size(data->frames);
-    for (i = 0; i < numFrames; i++) {
-        struct ID3v2dot3Frame* frame = dynarray_get(data->frames, i);
-        size += frame->size + 10;
-    }
-    size += (uint32_t)data->whiteSpace;
-    data->header->size = size;
-    data->exHeader->paddingSize = (uint32_t)data->whiteSpace;
-}
-
-/*-------------------------------------------------------------------------------------------------
     Main function
 -------------------------------------------------------------------------------------------------*/
 
 int addCommentV2dot3(FILE* file, char* comment, struct ID3v2dot3MetaData* data){
     //add the comment
-    // printf("adding comment\n");
     int bytesRemoved = removeCommentIfExists(data->frames);
     int bytesAdded = insertCommentFrame(comment, data->frames);
-    //update the whitespace
-    data->whiteSpace += bytesRemoved - bytesAdded;
-    if (data->whiteSpace < 0) {
-        // printf("adding whitespace\n");
-        addWhiteSpace(file, data);
+    //update the padding
+    data->padding += bytesRemoved - bytesAdded;
+    if (data->padding < 0) {
+        addpadding(file, data);
     }
-    //recalculate the size for the header
-    // printf("updating size\n");
-    updateSize(data);
-    // printf("updating file\n");
     printf("Data before writing\n");
     printMetaData(data);
     updateFile(file, data);

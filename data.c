@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <dirent.h>
 #include <unistd.h>
-#include <string.h>
-#include <sys/stat.h>
+
 #include "structures/list.h"
 #include "structures/dynarray.h"
 #include "metadata.h"

@@ -1,11 +1,7 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <dirent.h>
-#include <unistd.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdint.h>
+#include <dirent.h>
+
 #include "metadata.h"
 #include "mp3/readID3v2dot3.h"
 

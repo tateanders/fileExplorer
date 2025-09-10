@@ -1,11 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <dirent.h>
-#include <unistd.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <stdint.h>
+
 #include "readID3v2dot3.h"
 #include "structures/dynarray.h"
 
@@ -30,7 +27,7 @@ const char* ID3v2dot3ValidTags[] = {
 const size_t ID3v23ValidFramesCount = sizeof(ID3v2dot3ValidTags) / sizeof(ID3v2dot3ValidTags[0]);
 
 /*-------------------------------------------------------------------------------------------------
-    Helper functions
+    Print Functions
 -------------------------------------------------------------------------------------------------*/
 
 void printFrame(struct ID3v2dot3Frame* frame) {
@@ -59,10 +56,12 @@ void printMetaData(struct ID3v2dot3MetaData* data) {
     for (i = 0; i < numFrames; i++) {
         printFrame(dynarray_get(data->frames, i));
     }
-    printf("Padding: %zi\n\n", data->whiteSpace);
+    printf("Padding: %zi\n\n", data->padding);
 }
 
-//-------------------------------------------------------------------------------------------------
+/*-------------------------------------------------------------------------------------------------
+    Helper functions
+-------------------------------------------------------------------------------------------------*/
 
 int isValidID3v23Frame(char* tag) {
     size_t i;
@@ -97,6 +96,7 @@ void setFlags(struct ID3v2dot3Header* header) {
 -------------------------------------------------------------------------------------------------*/
 
 struct ID3v2dot3Header* readID3v2dot3Header(FILE* file) {
+    //create header
     uint8_t headerData[10];
     if ((fread(headerData, 1, 10, file) != 10) || (memcmp(headerData, "ID3", 3) != 0)) {
         return NULL;
@@ -110,7 +110,6 @@ struct ID3v2dot3Header* readID3v2dot3Header(FILE* file) {
     header->size = synchsafe_to_int(headerData + 6);
     setFlags(header);
 
-    // printHeader(header);
     return header;
 }
 
@@ -177,9 +176,6 @@ struct ID3v2dot3Frame* readFrame(FILE* file) {
         return NULL;
     }
 
-    // frame->totalSize = frame->size + 10;
-
-    // printFrame(frame);
     return frame;
 }
 
@@ -193,18 +189,19 @@ struct dynarray* getFrames(FILE* file) {
     return arr;
 }
 
-long getWhiteSpace(FILE* file) {
+long getpadding(FILE* file) {
     int c;
     long count = 0;
 
     while ((c = fgetc(file)) != EOF) {
         if (c == 0) {
+            //increment padding
             count++;
             continue;
         } else {
-            /* Put the non-zero byte back so file pos is at music start */
+            //return the padding
             if (ungetc(c, file) == EOF) {
-                /* fallback: seek back one byte */
+                //seek back one byte
                 long pos = ftell(file);
                 if (pos == -1L) return -1L;
                 if (fseek(file, pos - 1, SEEK_SET) != 0) return -1L;
@@ -213,7 +210,7 @@ long getWhiteSpace(FILE* file) {
         }
     }
 
-    /* EOF reached: no non-zero byte; file already at EOF */
+    //if we got an EOF, return the count
     return count;
 }
 
@@ -223,7 +220,9 @@ long getWhiteSpace(FILE* file) {
 
 void freeDataV2dot3(struct ID3v2dot3MetaData* data) {
     free(data->header);
-    free(data->exHeader);
+    if (data->header->eFlag) {
+        free(data->exHeader);
+    }
     int arrSize = dynarray_size(data->frames);
     int i;
     for (i = 0; i < arrSize; i++) {
@@ -250,11 +249,11 @@ struct ID3v2dot3MetaData* getMetaDataV2dot3(FILE* file) {
         readID3v2dot3ExtendedHeader(file, data->exHeader);
     }
     data->frames = getFrames(file);
-    long ws = getWhiteSpace(file);
+    long ws = getpadding(file);
     if (ws < 0){
         ws = 0;
     }
-    data->whiteSpace = (ssize_t)ws;
+    data->padding = (ssize_t)ws;
 
     printf("Data after reading\n");
     printMetaData(data);
