@@ -39,6 +39,22 @@ void dynarray_free(struct dynarray* arr) {
     Setters
 -------------------------------------------------------------------------------------------------*/
 
+void dynarray_push(struct dynarray* arr, void* val) {
+	assert(arr);
+	if(arr->size == arr->capacity){
+		arr->capacity *= 2;
+		arr->data = realloc(arr->data, arr->capacity * sizeof(void*));
+	}
+
+	arr->size += 1;
+	int i;
+	for (i = arr->size; i > 0; i--) {
+		arr->data[i] = arr->data[i - 1];
+	}
+
+	arr->data[0] = val;
+}
+
 void dynarray_insert(struct dynarray* arr, void* val) {
 	assert(arr);
 	if(arr->size == arr->capacity){

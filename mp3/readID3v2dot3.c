@@ -33,6 +33,37 @@ const size_t ID3v23ValidFramesCount = sizeof(ID3v2dot3ValidTags) / sizeof(ID3v2d
     Helper functions
 -------------------------------------------------------------------------------------------------*/
 
+void printFrame(struct ID3v2dot3Frame* frame) {
+    printf("FRAME:\n");
+    printf("TAG: %.4s ", frame->id);
+    printf("Size: %i | Data: %.*s\n", frame->size, frame->size - 1, frame->data + 1);
+}
+
+void printExHeader(struct ID3v2dot3ExtendedHeader* exHeader) {
+    printf("EXTENDED HEADER:\n");
+    printf("Size: %i | Padding: %i | CRC flag: %i\n", exHeader->size, exHeader->paddingSize, exHeader->crcFlag);
+}
+
+void printHeader(struct ID3v2dot3Header* header) {
+    printf("HEADER:\n");
+    printf("Version: %i | Size: %i | uFlag: %i | eFlag: %i | xFlag: %i\n", header->version, header->size, header->uFlag, header->eFlag, header->xFlag);
+}
+
+void printMetaData(struct ID3v2dot3MetaData* data) {
+    printHeader(data->header);
+    if (data->header->eFlag) {
+        printExHeader(data->exHeader);
+    }
+    int i;
+    int numFrames = dynarray_size(data->frames);
+    for (i = 0; i < numFrames; i++) {
+        printFrame(dynarray_get(data->frames, i));
+    }
+    printf("Padding: %zi\n\n", data->whiteSpace);
+}
+
+//-------------------------------------------------------------------------------------------------
+
 int isValidID3v23Frame(char* tag) {
     size_t i;
     for (i = 0; i < ID3v23ValidFramesCount; i++) {
@@ -64,10 +95,6 @@ void setFlags(struct ID3v2dot3Header* header) {
 /*-------------------------------------------------------------------------------------------------
     Read functions
 -------------------------------------------------------------------------------------------------*/
-// void printHeader(struct ID3v2dot3Header* header) {
-//     printf("HEADER:\n");
-//     printf("Version: %i | Size: %i | uFlag: %i | eFlag: %i | xFlag: %i\n", header->version, header->size, header->uFlag, header->eFlag, header->xFlag);
-// }
 
 struct ID3v2dot3Header* readID3v2dot3Header(FILE* file) {
     uint8_t headerData[10];
@@ -86,11 +113,6 @@ struct ID3v2dot3Header* readID3v2dot3Header(FILE* file) {
     // printHeader(header);
     return header;
 }
-
-// void printExHeader(struct ID3v2dot3ExtendedHeader* exHeader) {
-//     printf("EXTENDED HEADER:\n");
-//     printf("Size: %i | Padding: %i | CRC flag: %i\n", exHeader->size, exHeader->paddingSize, exHeader->crcFlag);
-// }
 
 void readID3v2dot3ExtendedHeader(FILE* file, struct ID3v2dot3ExtendedHeader* exHeader) {
     // Read 10 bytes first (size + flags + padding size)
@@ -115,12 +137,6 @@ void readID3v2dot3ExtendedHeader(FILE* file, struct ID3v2dot3ExtendedHeader* exH
     }
     // printExHeader(exHeader);
 }
-
-// void printFrame(struct ID3v2dot3Frame* frame) {
-//     printf("FRAME:\n");
-//     printf("TAG: %.4s ", frame->id);
-//     printf("Size: %i | Data: %.*s\n", frame->size, frame->size - 1, frame->data + 1);
-// }
 
 struct ID3v2dot3Frame* readFrame(FILE* file) {
     //read the tag
@@ -186,19 +202,19 @@ long getWhiteSpace(FILE* file) {
             count++;
             continue;
         } else {
-            /* ftell() returns position AFTER the fgetc; subtract 1 */
-            long pos = ftell(file);
-            if (pos == -1L) return -1L;
-            long music_start = pos - 1;
-            if (fseek(file, music_start, SEEK_SET) != 0) return -1L;
-            return music_start;
+            /* Put the non-zero byte back so file pos is at music start */
+            if (ungetc(c, file) == EOF) {
+                /* fallback: seek back one byte */
+                long pos = ftell(file);
+                if (pos == -1L) return -1L;
+                if (fseek(file, pos - 1, SEEK_SET) != 0) return -1L;
+            }
+            return count;
         }
     }
 
-    /* Reached EOF without finding a non-zero byte -> return current pos */
-    long pos = ftell(file);
-    if (pos == -1L) return -1L;
-    return pos;
+    /* EOF reached: no non-zero byte; file already at EOF */
+    return count;
 }
 
 /*-------------------------------------------------------------------------------------------------
@@ -234,8 +250,14 @@ struct ID3v2dot3MetaData* getMetaDataV2dot3(FILE* file) {
         readID3v2dot3ExtendedHeader(file, data->exHeader);
     }
     data->frames = getFrames(file);
-    data->whiteSpace = getWhiteSpace(file);
-    //data->endHeader = ftell(file) - 1;
+    long ws = getWhiteSpace(file);
+    if (ws < 0){
+        ws = 0;
+    }
+    data->whiteSpace = (ssize_t)ws;
+
+    printf("Data after reading\n");
+    printMetaData(data);
 
     return data;
 }

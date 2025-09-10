@@ -105,8 +105,10 @@ void updateFile(FILE* file, struct ID3v2dot3MetaData* data) {
         currPos += addFrame(dataString + currPos, frame);
     }
 
+    // printf("CurrPos: %li, TotalSize: %i\n", currPos, totalSize);
+
     fseek(file, 0, SEEK_SET);
-    fwrite(dataString, 1, (size_t)currPos, file);
+    fwrite(dataString, 1, (size_t)totalSize, file);
     fflush(file);
 
     //printf("updated file\n");
@@ -122,6 +124,10 @@ void addWhiteSpace(FILE* file, struct ID3v2dot3MetaData* data){
     fseek(file, 0, SEEK_END);
     long fileEnd = ftell(file);
     long remainingSize = fileEnd - totalSize;
+    if (remainingSize <= 0){
+        printf("error allocating whitespace\n");
+        return;
+    };
 
     //allocate the buffer
     uint8_t *musicDat = NULL;
@@ -201,7 +207,7 @@ struct ID3v2dot3Frame* createCommentFrame(char* comment) {
 int insertCommentFrame(char* comment, struct dynarray* arr) {
     struct ID3v2dot3Frame* commentFrame = createCommentFrame(comment);
     int frameSize = 10 + commentFrame->size;
-    dynarray_insert(arr, commentFrame);
+    dynarray_push(arr, commentFrame);
     return frameSize;
 }
 
@@ -222,6 +228,7 @@ void updateSize(struct ID3v2dot3MetaData* data) {
     }
     size += (uint32_t)data->whiteSpace;
     data->header->size = size;
+    data->exHeader->paddingSize = (uint32_t)data->whiteSpace;
 }
 
 /*-------------------------------------------------------------------------------------------------
@@ -230,14 +237,21 @@ void updateSize(struct ID3v2dot3MetaData* data) {
 
 int addCommentV2dot3(FILE* file, char* comment, struct ID3v2dot3MetaData* data){
     //add the comment
+    // printf("adding comment\n");
     int bytesRemoved = removeCommentIfExists(data->frames);
     int bytesAdded = insertCommentFrame(comment, data->frames);
     //update the whitespace
-    data->whiteSpace = bytesRemoved - bytesAdded;
+    data->whiteSpace += bytesRemoved - bytesAdded;
     if (data->whiteSpace < 0) {
+        // printf("adding whitespace\n");
         addWhiteSpace(file, data);
     }
     //recalculate the size for the header
+    // printf("updating size\n");
     updateSize(data);
+    // printf("updating file\n");
+    printf("Data before writing\n");
+    printMetaData(data);
+    updateFile(file, data);
     return 1;
 }

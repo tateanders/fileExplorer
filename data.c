@@ -105,6 +105,7 @@ struct song* createSong(struct dirent* entry, char* dirPath){
     song->fileType = (char*) calloc(len, sizeof(char));
     strcpy(song->fileType, dot + 1);
     //return
+    printf("working %s: %s\n",dirPath , song->songName);
     addComment(entry, dirPath);
     return song;
 }

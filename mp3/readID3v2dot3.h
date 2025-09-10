@@ -41,5 +41,6 @@ struct ID3v2dot3MetaData {
 // size_t getTotalSpace(struct ID3v2dot3MetaData* data);
 void freeDataV2dot3(struct ID3v2dot3MetaData* data);
 struct ID3v2dot3MetaData* getMetaDataV2dot3(FILE* file);
+void printMetaData(struct ID3v2dot3MetaData* data);
 
 #endif

@@ -18,6 +18,7 @@ struct dynarray* dynarray_create();
 void dynarray_free(struct dynarray*);
 int dynarray_size(struct dynarray*);
 int dynarray_capacity(struct dynarray*);
+void dynarray_push(struct dynarray*, void*);
 void dynarray_insert(struct dynarray*, void*);
 void dynarray_remove(struct dynarray*, int);
 void* dynarray_get(struct dynarray*, int);
