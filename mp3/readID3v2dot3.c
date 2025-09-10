@@ -51,14 +51,6 @@ uint32_t synchsafe_to_int(uint8_t* bytes) {
          |  (uint32_t)bytes[3];
 }
 
-// Function to convert regular integer to synchsafe integer
-void int_to_synchsafe(uint32_t value, uint8_t* bytes) {
-    bytes[0] = (value >> 21) & 0x7F;
-    bytes[1] = (value >> 14) & 0x7F;
-    bytes[2] = (value >> 7) & 0x7F;
-    bytes[3] = value & 0x7F;
-}
-
 void setFlags(struct ID3v2dot3Header* header) {
     header->uFlag = 0;
     header->eFlag = 0;
@@ -185,19 +177,6 @@ struct dynarray* getFrames(FILE* file) {
     return arr;
 }
 
-size_t getWhiteSpace(FILE* file) {
-    size_t count = 0;
-    int c;
-    while ((c = fgetc(file)) != EOF) {
-        if (c == 0) {
-            count++;
-        } else {
-            break;
-        }
-    }
-    return count;
-}
-
 long getWhiteSpace(FILE* file) {
     int c;
     long count = 0;
@@ -256,7 +235,7 @@ struct ID3v2dot3MetaData* getMetaDataV2dot3(FILE* file) {
     }
     data->frames = getFrames(file);
     data->whiteSpace = getWhiteSpace(file);
-    data->endHeader = ftell(file) - 1;
+    //data->endHeader = ftell(file) - 1;
 
     return data;
 }

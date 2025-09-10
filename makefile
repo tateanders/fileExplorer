@@ -24,3 +24,5 @@ mp3/editID3v2dot3.o: mp3/editID3v2dot3.c mp3/editID3v2dot3.h
 clean:
 	rm -f *.o data metadata structures/*.o mp3/*.o
 	rm -rf *.dSYM
+	clear
+	clear
