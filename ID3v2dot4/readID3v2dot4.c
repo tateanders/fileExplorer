@@ -218,7 +218,7 @@ long getpadding(FILE* file) {
     Add comment functions for ID3v2.3
 -------------------------------------------------------------------------------------------------*/
 
-void freeDataV2dot3(struct ID3v2dot4MetaData* data) {
+void freeDataV2dot4(struct ID3v2dot4MetaData* data) {
     free(data->header);
     if (data->header->eFlag) {
         free(data->exHeader);
@@ -237,7 +237,7 @@ void freeDataV2dot3(struct ID3v2dot4MetaData* data) {
     return;
 }
 
-struct ID3v2dot4MetaData* getMetaDataV2dot3(FILE* file) {
+struct ID3v2dot4MetaData* getMetaDataV2dot4(FILE* file) {
     struct ID3v2dot4MetaData* data = (struct ID3v2dot4MetaData*)calloc(1, sizeof(struct ID3v2dot4MetaData));
     fseek(file, 0, SEEK_SET);
     data->header = readID3v2dot4Header(file);

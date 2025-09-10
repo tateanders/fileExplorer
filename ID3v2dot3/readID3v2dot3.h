@@ -29,15 +29,12 @@ struct ID3v2dot3Frame {
     uint32_t size;
     uint16_t flags;
     uint8_t* data;
-    // size_t totalSize;
 };
 struct ID3v2dot3MetaData {
     struct ID3v2dot3Header* header;
     struct ID3v2dot3ExtendedHeader* exHeader;
     struct dynarray* frames;
-    // size_t size;
     ssize_t padding;
-    //long endHeader;
 };
 
 // size_t getTotalSpace(struct ID3v2dot3MetaData* data);

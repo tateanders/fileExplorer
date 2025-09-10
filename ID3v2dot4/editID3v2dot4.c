@@ -237,7 +237,7 @@ int insertCommentFrame(char* comment, struct dynarray* arr) {
     Main function
 -------------------------------------------------------------------------------------------------*/
 
-int addCommentV2dot3(FILE* file, char* comment, struct ID3v2dot4MetaData* data){
+int addCommentV2dot4(FILE* file, char* comment, struct ID3v2dot4MetaData* data){
     //add the comment
     int bytesRemoved = removeCommentIfExists(data->frames);
     int bytesAdded = insertCommentFrame(comment, data->frames);
