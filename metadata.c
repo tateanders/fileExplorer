@@ -3,7 +3,7 @@
 #include <dirent.h>
 
 #include "metadata.h"
-#include "mp3/readID3v2dot3.h"
+#include "ID3v2dot3/readID3v2dot3.h"
 
 /*-------------------------------------------------------------------------------------------------
     Check format functions
