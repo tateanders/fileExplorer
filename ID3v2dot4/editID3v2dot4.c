@@ -11,12 +11,12 @@
     Helper Functions (lowkey used AI)
 -------------------------------------------------------------------------------------------------*/
 
-static inline void write_u16_be(uint8_t* buf, uint16_t value) {
+static inline void write_u16_bev2dot4(uint8_t* buf, uint16_t value) {
     buf[0] = (value >> 8) & 0xFF;
     buf[1] =  value       & 0xFF;
 }
 
-void int_to_synchsafe(uint32_t value, uint8_t* bytes) {
+void int_to_synchsafev2dot4(uint32_t value, uint8_t* bytes) {
     bytes[0] = (value >> 21) & 0x7F;
     bytes[1] = (value >> 14) & 0x7F;
     bytes[2] = (value >> 7) & 0x7F;
@@ -27,24 +27,24 @@ void int_to_synchsafe(uint32_t value, uint8_t* bytes) {
     Build string to write functions
 -------------------------------------------------------------------------------------------------*/
 
-long addHeader(uint8_t* dataString, struct ID3v2dot4Header* header) {
+long addHeaderv2dot4(uint8_t* dataString, struct ID3v2dot4Header* header) {
     memcpy(dataString, header->id, 3);
     dataString[3] = header->version;
     dataString[4] = header->revision;
     dataString[5] = header->flags;
-    int_to_synchsafe(header->size, dataString + 6);
+    int_to_synchsafev2dot4(header->size, dataString + 6);
     return 10;
 }
 
-long addFrame(uint8_t* dataString, struct ID3v2dot4Frame* frame) {
+long addFramev2dot4(uint8_t* dataString, struct ID3v2dot4Frame* frame) {
     //tag
     memcpy(dataString, frame->id, 4);
 
     //size
-    int_to_synchsafe(frame->size, dataString + 4);
+    int_to_synchsafev2dot4(frame->size, dataString + 4);
 
     //flags
-    write_u16_be(dataString + 8, frame->flags);
+    write_u16_bev2dot4(dataString + 8, frame->flags);
 
     //actual data
     if ((frame->size > 0) && frame->data) {
@@ -58,7 +58,7 @@ long addFrame(uint8_t* dataString, struct ID3v2dot4Frame* frame) {
     Calculate the size and add it to the header
 -------------------------------------------------------------------------------------------------*/
 
-void updateSize(struct ID3v2dot4MetaData* data) {
+void updateSizev2dot4(struct ID3v2dot4MetaData* data) {
     uint32_t size = 0;
     int i;
     int numFrames = dynarray_size(data->frames);
@@ -74,15 +74,15 @@ void updateSize(struct ID3v2dot4MetaData* data) {
     write to file functions
 -------------------------------------------------------------------------------------------------*/
 
-void updateFile(FILE* file, struct ID3v2dot4MetaData* data) {
+void updateFilev2dot4(FILE* file, struct ID3v2dot4MetaData* data) {
     //recalculate the size for the header
-    updateSize(data);
+    updateSizev2dot4(data);
     //get the total size and the string we will print
     uint32_t totalSize = data->header->size + 10;
     uint8_t* dataString = calloc(totalSize, sizeof(uint8_t));
 
     //get the current position and add header
-    long currPos = addHeader(dataString, data->header);
+    long currPos = addHeaderv2dot4(dataString, data->header);
     
     //add frames
     struct dynarray* frames = data->frames;
@@ -90,7 +90,7 @@ void updateFile(FILE* file, struct ID3v2dot4MetaData* data) {
     int i;
     for (i = 0; i < numFrames; i++) {
         struct ID3v2dot4Frame* frame = dynarray_get(frames, i);
-        currPos += addFrame(dataString + currPos, frame);
+        currPos += addFramev2dot4(dataString + currPos, frame);
     }
 
     //write the data
@@ -103,7 +103,7 @@ void updateFile(FILE* file, struct ID3v2dot4MetaData* data) {
 
 //-------------------------------------------------------------------------------------------------
 
-void addpadding(FILE* file, struct ID3v2dot4MetaData* data){
+void addpaddingv2dot4(FILE* file, struct ID3v2dot4MetaData* data){
     long totalSize = (long)data->header->size + 10;
 
     //compute the remaining size
@@ -145,7 +145,7 @@ void addpadding(FILE* file, struct ID3v2dot4MetaData* data){
     Add Comment Functions
 -------------------------------------------------------------------------------------------------*/
 
-struct ID3v2dot4Frame* popCommentFrame(struct dynarray* arr) {
+struct ID3v2dot4Frame* popCommentFramev2dot4(struct dynarray* arr) {
     int arrSize = dynarray_size(arr);
     int i;
     for (i = 0; i < arrSize; i++) {
@@ -159,8 +159,8 @@ struct ID3v2dot4Frame* popCommentFrame(struct dynarray* arr) {
 }
 
 //remove comment frame and return how many bytes were removed
-int removeCommentIfExists(struct dynarray* arr) {
-    struct ID3v2dot4Frame* comment = popCommentFrame(arr);
+int removeCommentIfExistsv2dot4(struct dynarray* arr) {
+    struct ID3v2dot4Frame* comment = popCommentFramev2dot4(arr);
     int frameSize = 0;
     if (comment) {
         frameSize = 10 + (int)comment->size;
@@ -172,7 +172,7 @@ int removeCommentIfExists(struct dynarray* arr) {
 
 //-------------------------------------------------------------------------------------------------
 
-char* buildCOMMStr(char* comment, uint32_t* size) {
+char* buildCOMMStrv2dot4(char* comment, uint32_t* size) {
     char* data = (char*)calloc(1, 5 + strlen(comment));
     memcpy(data, "\0eng\0", 5);
     memcpy(data + 5, comment, strlen(comment));
@@ -180,11 +180,11 @@ char* buildCOMMStr(char* comment, uint32_t* size) {
     return data;
 }
 
-struct ID3v2dot4Frame* createCommentFrame(char* comment) {
+struct ID3v2dot4Frame* createCommentFramev2dot4(char* comment) {
     //create the frame
     struct ID3v2dot4Frame* frame = (struct ID3v2dot4Frame*)calloc(1, sizeof(struct ID3v2dot4Frame));
     //add the string and size
-    char* data = buildCOMMStr(comment, &frame->size);
+    char* data = buildCOMMStrv2dot4(comment, &frame->size);
     frame->data = (uint8_t*)data;
     //add the tag
     strncpy(frame->id, "COMM", 4);
@@ -192,8 +192,8 @@ struct ID3v2dot4Frame* createCommentFrame(char* comment) {
 }
 
 //add comment frame and return how many bytes were added
-int insertCommentFrame(char* comment, struct dynarray* arr) {
-    struct ID3v2dot4Frame* commentFrame = createCommentFrame(comment);
+int insertCommentFramev2dot4(char* comment, struct dynarray* arr) {
+    struct ID3v2dot4Frame* commentFrame = createCommentFramev2dot4(comment);
     int frameSize = 10 + commentFrame->size;
     dynarray_push(arr, commentFrame);
     return frameSize;
@@ -205,15 +205,15 @@ int insertCommentFrame(char* comment, struct dynarray* arr) {
 
 int addCommentV2dot4(FILE* file, char* comment, struct ID3v2dot4MetaData* data){
     //add the comment
-    int bytesRemoved = removeCommentIfExists(data->frames);
-    int bytesAdded = insertCommentFrame(comment, data->frames);
+    int bytesRemoved = removeCommentIfExistsv2dot4(data->frames);
+    int bytesAdded = insertCommentFramev2dot4(comment, data->frames);
     //update the padding
     data->padding += bytesRemoved - bytesAdded;
     if (data->padding < 0) {
-        addpadding(file, data);
+        addpaddingv2dot4(file, data);
     }
     printf("Data before writing\n");
-    printMetaData(data);
-    updateFile(file, data);
+    printMetaData4(data);
+    updateFilev2dot4(file, data);
     return 1;
 }

@@ -1,5 +1,5 @@
-#ifndef __READTD3V2DOT4_H
-#define __READTD3V2DOT4_H
+#ifndef __READID3V2DOT4_H
+#define __READID3V2DOT4_H
 
 #include <stdint.h>
 
@@ -30,6 +30,6 @@ struct ID3v2dot4MetaData {
 
 void freeDataV2dot4(struct ID3v2dot4MetaData* data);
 struct ID3v2dot4MetaData* getMetaDataV2dot4(FILE* file);
-void printMetaData(struct ID3v2dot4MetaData* data);
+void printMetaData4(struct ID3v2dot4MetaData* data);
 
 #endif

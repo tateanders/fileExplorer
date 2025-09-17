@@ -3,7 +3,6 @@
 #include <dirent.h>
 
 #include "metadata.h"
-#include "ID3v2dot3/readID3v2dot3.h"
 
 /*-------------------------------------------------------------------------------------------------
     Check format functions
@@ -49,6 +48,13 @@ int addComment(struct dirent* entry, char* comment){
         struct ID3v2dot3MetaData* data = getMetaDataV2dot3(file);
         addCommentV2dot3(file, comment, data);
         freeDataV2dot3(data);
+    } else if (ID3v == 24) {
+        printf("updating file\n");
+        struct ID3v2dot4MetaData* data = getMetaDataV2dot4(file);
+        if (data) {
+            addCommentV2dot4(file, comment, data);
+            freeDataV2dot4(data);
+        }
     }
 
     fclose(file);

@@ -3,8 +3,8 @@ CFLAGS = -I. -IID3v2dot3 -IID3v2dot4 -Istructures
 
 all: data
 
-data: data.c structures/list.o structures/dynarray.o ID3v2dot3/readID3v2dot3.o ID3v2dot3/editID3v2dot3.o metadata.o
-	$(CC) $(CFLAGS) data.c structures/list.o structures/dynarray.o ID3v2dot3/readID3v2dot3.o ID3v2dot3/editID3v2dot3.o metadata.o -o data
+data: data.c structures/list.o structures/dynarray.o ID3v2dot3/readID3v2dot3.o ID3v2dot3/editID3v2dot3.o ID3v2dot4/readID3v2dot4.o ID3v2dot4/editID3v2dot4.o metadata.o
+	$(CC) $(CFLAGS) data.c structures/list.o structures/dynarray.o ID3v2dot3/readID3v2dot3.o ID3v2dot3/editID3v2dot3.o ID3v2dot4/readID3v2dot4.o ID3v2dot4/editID3v2dot4.o metadata.o -o data
 
 metadata.o: metadata.c metadata.h
 	$(CC) $(CFLAGS) -c metadata.c

@@ -33,23 +33,23 @@ const size_t ID3v24ValidFramesCount = sizeof(ID3v2dot4ValidTags) / sizeof(ID3v2d
     Print Functions
 -------------------------------------------------------------------------------------------------*/
 
-void printFrame(struct ID3v2dot4Frame* frame) {
+void printFramev2dot4(struct ID3v2dot4Frame* frame) {
     printf("FRAME:\n");
     printf("TAG: %.4s ", frame->id);
     printf("Size: %i | Data: %.*s\n", frame->size, frame->size - 1, frame->data + 1);
 }
 
-void printHeader(struct ID3v2dot4Header* header) {
+void printHeaderv2dot4(struct ID3v2dot4Header* header) {
     printf("HEADER:\n");
     printf("Version: %i | Size: %i | uFlag: %i | eFlag: %i | xFlag: %i\n", header->version, header->size, header->uFlag, header->eFlag, header->xFlag);
 }
 
-void printMetaData(struct ID3v2dot4MetaData* data) {
-    printHeader(data->header);
+void printMetaData4(struct ID3v2dot4MetaData* data) {
+    printHeaderv2dot4(data->header);
     int i;
     int numFrames = dynarray_size(data->frames);
     for (i = 0; i < numFrames; i++) {
-        printFrame(dynarray_get(data->frames, i));
+        printFramev2dot4(dynarray_get(data->frames, i));
     }
     printf("Padding: %zi\n\n", data->padding);
 }
@@ -69,14 +69,14 @@ int isValidID3v24Frame(char* tag) {
 }
 
 // Function to convert synchsafe integer to regular integer
-uint32_t synchsafe_to_int(const uint8_t* bytes) {
+uint32_t synchsafe_to_intv2dot4(const uint8_t* bytes) {
     return ((uint32_t)(bytes[0] & 0x7F) << 21)
          | ((uint32_t)(bytes[1] & 0x7F) << 14)
          | ((uint32_t)(bytes[2] & 0x7F) << 7)
          |  (uint32_t)(bytes[3] & 0x7F);
 }
 
-void setFlags(struct ID3v2dot4Header* header) {
+void setFlagsv2dot4(struct ID3v2dot4Header* header) {
     uint8_t flags = header->flags;
     header->uFlag = (flags & 0x80) ? 1 : 0;
     header->eFlag = (flags & 0x40) ? 1 : 0;
@@ -100,13 +100,13 @@ struct ID3v2dot4Header* readID3v2dot4Header(FILE* file) {
     header->version = headerData[3];
     header->revision = headerData[4];
     header->flags = headerData[5];
-    header->size = synchsafe_to_int(headerData + 6);
-    setFlags(header);
+    header->size = synchsafe_to_intv2dot4(headerData + 6);
+    setFlagsv2dot4(header);
 
     return header;
 }
 
-struct ID3v2dot4Frame* readFrame(FILE* file) {
+struct ID3v2dot4Frame* readFramev2dot4(FILE* file) {
     //read the tag
     char tagBuffer[4];
     long currentPos = ftell(file);
@@ -125,7 +125,7 @@ struct ID3v2dot4Frame* readFrame(FILE* file) {
         free(frame);
         return NULL;
     }
-    frame->size = synchsafe_to_int(sizeBuf);
+    frame->size = synchsafe_to_intv2dot4(sizeBuf);
 
     //sanity check
     const uint32_t MAX_FRAME_SIZE = 64u * 1024u * 1024u;
@@ -151,17 +151,17 @@ struct ID3v2dot4Frame* readFrame(FILE* file) {
     return frame;
 }
 
-struct dynarray* getFrames(FILE* file) {
+struct dynarray* getFramesv2dot4(FILE* file) {
     struct dynarray* arr = dynarray_create();
-    struct ID3v2dot4Frame* frame = readFrame(file);
+    struct ID3v2dot4Frame* frame = readFramev2dot4(file);
     while(frame) {
         dynarray_insert(arr, (void*)frame);
-        frame = readFrame(file);
+        frame = readFramev2dot4(file);
     }
     return arr;
 }
 
-long getpadding(FILE* file) {
+long getpaddingv2dot4(FILE* file) {
     int c;
     long count = 0;
 
@@ -210,23 +210,20 @@ struct ID3v2dot4MetaData* getMetaDataV2dot4(FILE* file) {
     struct ID3v2dot4MetaData* data = (struct ID3v2dot4MetaData*)calloc(1, sizeof(struct ID3v2dot4MetaData));
     fseek(file, 0, SEEK_SET);
     data->header = readID3v2dot4Header(file);
-    if (!data->header) {
-        return NULL;
-    }
-    if (data->header->flags) {
+    if ((!data->header) || (data->header->flags)) {
         free(data->header);
         free(data);
         return NULL;
     }
-    data->frames = getFrames(file);
-    long ws = getpadding(file);
+    data->frames = getFramesv2dot4(file);
+    long ws = getpaddingv2dot4(file);
     if (ws < 0){
         ws = 0;
     }
     data->padding = (ssize_t)ws;
 
     printf("Data after reading\n");
-    printMetaData(data);
+    printMetaData4(data);
 
     return data;
 }
