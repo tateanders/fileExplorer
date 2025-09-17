@@ -11,13 +11,6 @@
     Helper Functions (lowkey used AI)
 -------------------------------------------------------------------------------------------------*/
 
-static inline void write_u32_be(uint8_t* buf, uint32_t value) {
-    buf[0] = (value >> 24) & 0xFF;
-    buf[1] = (value >> 16) & 0xFF;
-    buf[2] = (value >>  8) & 0xFF;
-    buf[3] =  value        & 0xFF;
-}
-
 static inline void write_u16_be(uint8_t* buf, uint16_t value) {
     buf[0] = (value >> 8) & 0xFF;
     buf[1] =  value       & 0xFF;
@@ -43,30 +36,12 @@ long addHeader(uint8_t* dataString, struct ID3v2dot4Header* header) {
     return 10;
 }
 
-long addExHeader(uint8_t* dataString, struct ID3v2dot4ExtendedHeader* exHeader) {
-    //add the ex header size
-    write_u32_be(dataString, exHeader->size);
-    //add the flags
-    write_u16_be(dataString + 4, exHeader->flags);
-    //add the padding size
-    write_u32_be(dataString + 6, exHeader->paddingSize);
-
-    long bytesWritten = 10;
-    //if the crc exists
-    if (exHeader->crcFlag) {
-        write_u32_be(dataString + 10, exHeader->crc);
-        bytesWritten += 4;
-    }
-
-    return bytesWritten;
-}
-
 long addFrame(uint8_t* dataString, struct ID3v2dot4Frame* frame) {
     //tag
     memcpy(dataString, frame->id, 4);
 
     //size
-    write_u32_be(dataString + 4, frame->size);
+    int_to_synchsafe(frame->size, dataString + 4);
 
     //flags
     write_u16_be(dataString + 8, frame->flags);
@@ -85,9 +60,6 @@ long addFrame(uint8_t* dataString, struct ID3v2dot4Frame* frame) {
 
 void updateSize(struct ID3v2dot4MetaData* data) {
     uint32_t size = 0;
-    if (data->exHeader) {
-        size += data->exHeader->size;
-    }
     int i;
     int numFrames = dynarray_size(data->frames);
     for (i = 0; i < numFrames; i++) {
@@ -96,7 +68,6 @@ void updateSize(struct ID3v2dot4MetaData* data) {
     }
     size += (uint32_t)data->padding;
     data->header->size = size;
-    data->exHeader->paddingSize = (uint32_t)data->padding;
 }
 
 /*-------------------------------------------------------------------------------------------------
@@ -112,11 +83,6 @@ void updateFile(FILE* file, struct ID3v2dot4MetaData* data) {
 
     //get the current position and add header
     long currPos = addHeader(dataString, data->header);
-
-    //add ex header
-    if (data->header->eFlag == 1) {
-        currPos += addExHeader(dataString + currPos, data->exHeader);
-    }
     
     //add frames
     struct dynarray* frames = data->frames;

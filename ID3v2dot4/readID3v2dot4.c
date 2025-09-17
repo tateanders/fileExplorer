@@ -11,20 +11,23 @@
 -------------------------------------------------------------------------------------------------*/
 
 const char* ID3v2dot4ValidTags[] = {
-    "AENC", "APIC", "COMM", "COMR", "ENCR", "EQUA", "ETCO",
-    "GEOB", "GRID", "IPLS", "LINK", "MCDI", "MLLT", "OWNE",
-    "PRIV", "PCNT", "POPM", "POSS", "RBUF", "RVAD", "RVRB",
-    "SYLT", "SYTC", "TALB", "TBPM", "TCOM", "TCON", "TCOP",
-    "TDAT", "TDLY", "TENC", "TEXT", "TFLT", "TIME", "TIT1",
-    "TIT2", "TIT3", "TKEY", "TLAN", "TLEN", "TMED", "TOAL",
-    "TOFN", "TOLY", "TOPE", "TORY", "TOWN", "TPE1", "TPE2",
-    "TPE3", "TPE4", "TPOS", "TPUB", "TRCK", "TRDA", "TRSN",
-    "TRSO", "TSIZ", "TSRC", "TSSE", "TYER", "TXXX", "UFID",
-    "USER", "USLT", "WCOM", "WCOP", "WOAF", "WOAR", "WOAS",
-    "WORS", "WPAY", "WPUB", "WXXX"
+    "AENC", "APIC", "ASPI", "COMM", "COMR", "ENCR", "EQU2", "ETCO",
+    "GEOB", "GRID", "LINK", "MCDI", "MLLT", "OWNE", "PRIV", "PCNT",
+    "POPM", "POSS", "RBUF", "RVA2", "RVRB", "SEEK", "SIGN", "SYLT",
+    "SYTC", "TALB", "TBPM", "TCOM", "TCON", "TCOP", "TDEN", "TDLY", 
+    "TDOR", "TDRC", "TDRL", "TDTG", "TENC", "TEXT", "TFLT", "TIME",
+    "TIT1", "TIT2", "TIT3", "TKEY", "TLAN", "TLEN", "TMCL", "TMED",
+    "TMOO", "TOAL", "TOFN", "TOLY", "TOPE", "TORY", "TOWN", "TPE1",
+    "TPE2", "TPE3", "TPE4", "TPOS", "TPRO", "TPUB", "TRCK", "TRDA",
+    "TRSN", "TRSO", "TSOA", "TSOP", "TSOT", "TSRC", "TSSE", "TSST",
+    "TSIZ", "TXXX", "UFID", "USER", "USLT", "WCOM", "WCOP", "WOAF",
+    "WOAR", "WOAS", "WORS", "WPAY", "WPUB", "WXXX", "AENC", "ASPI",
+    "EQUA", "RVA2", "EQU2", "CHAP", "CTOC", "LINK", "SIGN", "SEEK",
+    "GRID", "MLLT", "MCDI", "POSS", "PRIV", "OWNE", "COMR", "ENCR",
+    "GEOB", "RBUF", "RVRB", "POSS"
 };
 
-const size_t ID3v23ValidFramesCount = sizeof(ID3v2dot4ValidTags) / sizeof(ID3v2dot4ValidTags[0]);
+const size_t ID3v24ValidFramesCount = sizeof(ID3v2dot4ValidTags) / sizeof(ID3v2dot4ValidTags[0]);
 
 /*-------------------------------------------------------------------------------------------------
     Print Functions
@@ -36,11 +39,6 @@ void printFrame(struct ID3v2dot4Frame* frame) {
     printf("Size: %i | Data: %.*s\n", frame->size, frame->size - 1, frame->data + 1);
 }
 
-void printExHeader(struct ID3v2dot4ExtendedHeader* exHeader) {
-    printf("EXTENDED HEADER:\n");
-    printf("Size: %i | Padding: %i | CRC flag: %i\n", exHeader->size, exHeader->paddingSize, exHeader->crcFlag);
-}
-
 void printHeader(struct ID3v2dot4Header* header) {
     printf("HEADER:\n");
     printf("Version: %i | Size: %i | uFlag: %i | eFlag: %i | xFlag: %i\n", header->version, header->size, header->uFlag, header->eFlag, header->xFlag);
@@ -48,9 +46,6 @@ void printHeader(struct ID3v2dot4Header* header) {
 
 void printMetaData(struct ID3v2dot4MetaData* data) {
     printHeader(data->header);
-    if (data->header->eFlag) {
-        printExHeader(data->exHeader);
-    }
     int i;
     int numFrames = dynarray_size(data->frames);
     for (i = 0; i < numFrames; i++) {
@@ -63,9 +58,9 @@ void printMetaData(struct ID3v2dot4MetaData* data) {
     Helper functions
 -------------------------------------------------------------------------------------------------*/
 
-int isValidID3v23Frame(char* tag) {
+int isValidID3v24Frame(char* tag) {
     size_t i;
-    for (i = 0; i < ID3v23ValidFramesCount; i++) {
+    for (i = 0; i < ID3v24ValidFramesCount; i++) {
         if (memcmp(tag, ID3v2dot4ValidTags[i], 4) == 0) {
             return 1;
         }
@@ -74,21 +69,19 @@ int isValidID3v23Frame(char* tag) {
 }
 
 // Function to convert synchsafe integer to regular integer
-uint32_t synchsafe_to_int(uint8_t* bytes) {
-    return ((uint32_t)bytes[0] << 21)
-         | ((uint32_t)bytes[1] << 14)
-         | ((uint32_t)bytes[2] << 7)
-         |  (uint32_t)bytes[3];
+uint32_t synchsafe_to_int(const uint8_t* bytes) {
+    return ((uint32_t)(bytes[0] & 0x7F) << 21)
+         | ((uint32_t)(bytes[1] & 0x7F) << 14)
+         | ((uint32_t)(bytes[2] & 0x7F) << 7)
+         |  (uint32_t)(bytes[3] & 0x7F);
 }
 
 void setFlags(struct ID3v2dot4Header* header) {
-    header->uFlag = 0;
-    header->eFlag = 0;
-    header->xFlag = 0;
     uint8_t flags = header->flags;
-    header->uFlag = (header->flags & 0x80) ? 1 : 0;
-    header->eFlag = (header->flags & 0x40) ? 1 : 0;
-    header->xFlag = (header->flags & 0x20) ? 1 : 0;
+    header->uFlag = (flags & 0x80) ? 1 : 0;
+    header->eFlag = (flags & 0x40) ? 1 : 0;
+    header->xFlag = (flags & 0x20) ? 1 : 0;
+    header->fFlag = (flags & 0x10) ? 1 : 0;
 }
 
 /*-------------------------------------------------------------------------------------------------
@@ -113,36 +106,12 @@ struct ID3v2dot4Header* readID3v2dot4Header(FILE* file) {
     return header;
 }
 
-void readID3v2dot4ExtendedHeader(FILE* file, struct ID3v2dot4ExtendedHeader* exHeader) {
-    // Read 10 bytes first (size + flags + padding size)
-    uint8_t buffer[10];
-    fread(buffer, 1, 10, file);
-
-    exHeader->size = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3];
-    exHeader->flags = (buffer[4] << 8) | buffer[5];
-    exHeader->paddingSize = (buffer[6] << 24) | (buffer[7] << 16) | (buffer[8] << 8) | buffer[9];
-    exHeader->crcFlag = (exHeader->flags & 0x8000) ? 1 : 0;
-
-    // Read optional CRC if present
-    if (exHeader->crcFlag) {
-        uint8_t crcBuf[4];
-        if (fread(crcBuf, 1, 4, file) != 4) {
-            printf("Failed to read CRC from extended header\n");
-            return;
-        }
-        exHeader->crc = (crcBuf[0] << 24) | (crcBuf[1] << 16) | (crcBuf[2] << 8) | crcBuf[3];
-    } else {
-        exHeader->crc = 0; // No CRC present
-    }
-    // printExHeader(exHeader);
-}
-
 struct ID3v2dot4Frame* readFrame(FILE* file) {
     //read the tag
     char tagBuffer[4];
     long currentPos = ftell(file);
     fread(tagBuffer, 1, 4, file);
-    if (!isValidID3v23Frame(tagBuffer)){
+    if (!isValidID3v24Frame(tagBuffer)){
         fseek(file, currentPos, SEEK_SET);
         return NULL;
     }
@@ -156,15 +125,18 @@ struct ID3v2dot4Frame* readFrame(FILE* file) {
         free(frame);
         return NULL;
     }
-    frame->size = ((uint32_t)sizeBuf[0] << 24) | ((uint32_t)sizeBuf[1] << 16) | ((uint32_t)sizeBuf[2] << 8) | (uint32_t)sizeBuf[3];
-    if (frame->size > (1u << 24)) {
+    frame->size = synchsafe_to_int(sizeBuf);
+
+    //sanity check
+    const uint32_t MAX_FRAME_SIZE = 64u * 1024u * 1024u;
+    if (frame->size > MAX_FRAME_SIZE) {
         free(frame);
         return NULL;
     }
 
     //read the flags
     uint8_t flagsBuf[2];
-    if (fread(flagsBuf, 1, 2, file) != 2) { free(frame); return NULL; }
+    fread(flagsBuf, 1, 2, file);
     frame->flags = (uint16_t)flagsBuf[0] << 8 | (uint16_t)flagsBuf[1];
 
     //read the data
@@ -220,9 +192,6 @@ long getpadding(FILE* file) {
 
 void freeDataV2dot4(struct ID3v2dot4MetaData* data) {
     free(data->header);
-    if (data->header->eFlag) {
-        free(data->exHeader);
-    }
     int arrSize = dynarray_size(data->frames);
     int i;
     for (i = 0; i < arrSize; i++) {
@@ -244,9 +213,10 @@ struct ID3v2dot4MetaData* getMetaDataV2dot4(FILE* file) {
     if (!data->header) {
         return NULL;
     }
-    data->exHeader = calloc(1, sizeof(struct ID3v2dot4ExtendedHeader));
-    if (data->header->eFlag) {
-        readID3v2dot4ExtendedHeader(file, data->exHeader);
+    if (data->header->flags) {
+        free(data->header);
+        free(data);
+        return NULL;
     }
     data->frames = getFrames(file);
     long ws = getpadding(file);

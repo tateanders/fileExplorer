@@ -11,33 +11,23 @@ struct ID3v2dot4Header {
     uint8_t flags;
     uint32_t size;
     //data after interpretation
-    uint8_t uFlag;
-    uint8_t eFlag;
-    uint8_t xFlag;
-};
-struct ID3v2dot4ExtendedHeader {
-    //main data that gets read
-    uint32_t size;
-    uint16_t flags;
-    uint32_t paddingSize;
-    uint32_t crc;
-    //data after interpretation
-    uint8_t crcFlag;
+    uint8_t uFlag; //unsynchronized
+    uint8_t eFlag; //extended header
+    uint8_t xFlag; //experimental
+    uint8_t fFlag; //footer
 };
 struct ID3v2dot4Frame {
     char id[4];
-    uint32_t size;
+    uint32_t size; //syncsafe
     uint16_t flags;
     uint8_t* data;
 };
 struct ID3v2dot4MetaData {
     struct ID3v2dot4Header* header;
-    struct ID3v2dot4ExtendedHeader* exHeader;
     struct dynarray* frames;
     ssize_t padding;
 };
 
-// size_t getTotalSpace(struct ID3v2dot4MetaData* data);
 void freeDataV2dot4(struct ID3v2dot4MetaData* data);
 struct ID3v2dot4MetaData* getMetaDataV2dot4(FILE* file);
 void printMetaData(struct ID3v2dot4MetaData* data);
