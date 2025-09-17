@@ -220,9 +220,7 @@ long getpadding(FILE* file) {
 
 void freeDataV2dot3(struct ID3v2dot3MetaData* data) {
     free(data->header);
-    if (data->header->eFlag) {
-        free(data->exHeader);
-    }
+    free(data->exHeader);
     int arrSize = dynarray_size(data->frames);
     int i;
     for (i = 0; i < arrSize; i++) {
@@ -255,8 +253,8 @@ struct ID3v2dot3MetaData* getMetaDataV2dot3(FILE* file) {
     }
     data->padding = (ssize_t)ws;
 
-    printf("Data after reading\n");
-    printMetaData(data);
+    // printf("Data after reading\n");
+    // printMetaData(data);
 
     return data;
 }

@@ -222,8 +222,8 @@ struct ID3v2dot4MetaData* getMetaDataV2dot4(FILE* file) {
     }
     data->padding = (ssize_t)ws;
 
-    printf("Data after reading\n");
-    printMetaData4(data);
+    // printf("Data after reading\n");
+    // printMetaData4(data);
 
     return data;
 }
